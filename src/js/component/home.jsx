@@ -27,6 +27,7 @@ const Home = () => {
       done: false,
       label: todo,
     };
+    
     setCounter(counter + 1); // Update counter using setCounter
     const newTodos = [...todos, newTodo];
     await fetch("https://playground.4geeks.com/apis/fake/todos/user/Diaz", {
