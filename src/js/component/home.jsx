@@ -6,51 +6,66 @@ const Home = () => {
   const [todo, setTodo] = useState("");
   const [todos, setTodos] = useState([]);
   const [dbExist, setDbExist] = useState(false);
-  const [loading, setLoading] = useState(true); // Added loading state
+  const [loading, setLoading] = useState(true); 
+  const [error, setError] = useState(null); 
 
   const handleInput = (evt) => {
     setTodo(evt.target.value);
   };
 
   const handleDelete = async () => {
-    await fetch("https://playground.4geeks.com/apis/fake/todos/user/Diaz", {
-      method: "DELETE",
-    });
-
-    setTodos([]);
-    setTodo("");
+    try {
+      await fetch("https://playground.4geeks.com/apis/fake/todos/user/Diaz", {
+        method: "DELETE",
+      });
+      setTodos([]);
+      setTodo("");
+    } catch (error) {
+      console.error("Error deleting todos:", error);
+      setError("Error deleting todos");
+    }
   };
 
   const handleClick = async () => {
-    const newTodo = {
-      id: counter,
-      done: false,
-      label: todo,
-    };
-    
-    setCounter(counter + 1); // Update counter using setCounter
-    const newTodos = [...todos, newTodo];
-    await fetch("https://playground.4geeks.com/apis/fake/todos/user/Diaz", {
-      method: "PUT",
-      body: JSON.stringify(newTodos),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    setTodos(newTodos);
-    setTodo("");
+    try {
+      const newTodo = {
+        id: counter,
+        done: false,
+        label: todo,
+      };
+
+      setCounter(counter + 1);
+      const newTodos = [...todos, newTodo];
+      await fetch("https://playground.4geeks.com/apis/fake/todos/user/Diaz", {
+        method: "PUT",
+        body: JSON.stringify(newTodos),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      setTodos(newTodos);
+      setTodo("");
+    } catch (error) {
+      console.error("Error adding todo:", error);
+      setError("Error adding todo");
+    }
   };
 
   const handleDeleteTodo = (todoId) => async () => {
-    const newTodos = todos.filter((data) => data.id !== todoId);
-    await fetch("https://playground.4geeks.com/apis/fake/todos/user/Diaz", {
-      method: "PUT",
-      body: JSON.stringify(newTodos),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    setTodos(newTodos);
+    try {
+      const newTodos = todos.filter((data) => data.id !== todoId);
+      await fetch("https://playground.4geeks.com/apis/fake/todos/user/Diaz", {
+        method: "PUT",
+        body: JSON.stringify(newTodos),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      setTodos(newTodos);
+    } catch (error) {
+      console.error("Error deleting todo:", error);
+      setError("Error deleting todo");
+    }
   };
 
   useEffect(() => {
@@ -67,11 +82,15 @@ const Home = () => {
           }
         );
         const data = await res.json();
-        if (data.msg === "The user exist" || data.msg === "The user has been deleted successfully") {
+        if (
+          data.msg === "The user exist" ||
+          data.msg === "The user has been deleted successfully"
+        ) {
           setDbExist(true);
         }
       } catch (error) {
         console.error("Error creating database:", error);
+        setError("Error creating database");
       } finally {
         setLoading(false);
       }
@@ -81,47 +100,59 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    if (!dbExist) {
+    if (!dbExist && !error) {
       const getDb = async () => {
-        const res = await fetch(
-          "https://playground.4geeks.com/apis/fake/todos/user/Diaz"
-        );
-        const data = await res.json();
-        console.log("DB DATA", data);
-        setTodos(data);
+        try {
+          const res = await fetch(
+            "https://playground.4geeks.com/apis/fake/todos/user/Diaz"
+          );
+          const data = await res.json();
+          console.log("DB DATA", data);
+          setTodos(data);
+        } catch (error) {
+          console.error("Error fetching todos:", error);
+          setError("Error fetching todos");
+        }
       };
       getDb();
     }
-  }, [dbExist]);
+  }, [dbExist, error]);
 
   const handleDone = (todoId) => async () => {
-    const newTodos = todos.map((data) => {
-      if (todoId === data.id) {
-        return {
-          ...data,
-          done: true,
-        };
-      }
-      return data;
-    });
+    try {
+      const newTodos = todos.map((data) => {
+        if (todoId === data.id) {
+          return {
+            ...data,
+            done: true,
+          };
+        }
+        return data;
+      });
 
-    const res = await fetch(
-      "https://playground.4geeks.com/apis/fake/todos/user/Diaz",
-      {
-        method: "PUT",
-        body: JSON.stringify(newTodos),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    const data = await res.json();
-    console.log(data);
-    setTodos(newTodos);
+      await fetch(
+        "https://playground.4geeks.com/apis/fake/todos/user/Diaz",
+        {
+          method: "PUT",
+          body: JSON.stringify(newTodos),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      setTodos(newTodos);
+    } catch (error) {
+      console.error("Error marking todo as done:", error);
+      setError("Error marking todo as done");
+    }
   };
 
   if (loading) {
     return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
   }
 
   const handleFormSubmit = (evt) => {
@@ -132,7 +163,9 @@ const Home = () => {
   return (
     <div className="container">
       <div className="header">
-        <h1><strong>Things To Do</strong></h1>
+        <h1>
+          <strong>Things To Do</strong>
+        </h1>
       </div>
       <form onSubmit={handleFormSubmit}>
         <div className="add-task">
